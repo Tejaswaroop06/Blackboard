@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  pseudonym         String?   @unique
+  email             String    @unique
+  password          String?
+  emailVerified     DateTime?
+  verificationToken String?   @unique
+  verificationTokenExpires DateTime?
+  image             String?
+  
+  // 'Unsocial' Features
+  isAdmin       Boolean   @default(false)
+  isGhostMode   Boolean   @default(false)
+  bio           String?
+  auraColor     String?   @default("#000000")
+  auraSound     String?   // A URL or identifier for an ambient sound
+
+  accounts      Account[]
+  sessions      Session[]
+  posts         Post[]
+  memberships   ClubMembership[]
+  ownedClubs    Club[]    @relation("ClubOwner")
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Club {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  genre       String   @default("GENERAL") // LIBRARY, OBSERVATORY, ASYNC, GALLERY
+  isLocked    Boolean  @default(false)
+  frequency   Float?   @unique // Club FM Frequency (e.g. 104.2)
+  isStation   Boolean  @default(false)
+  isPersonal  Boolean  @default(false) // If true, this is a user's personal radio
+  ownerId     String?  // The creator of the personal station
+  owner       User?    @relation("ClubOwner", fields: [ownerId], references: [id])
+  
+  // Mitosis Tracking
+  generation  Int      @default(1)
+  parentId    String?
+  
+  members     ClubMembership[]
+  posts       Post[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ClubMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  clubId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  @@unique([userId, clubId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  content   String
+  genre     String   @default("FEED") // FEED, VOID, CLUB
+  clubId    String?
+  club      Club?    @relation(fields: [clubId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  
+  // No public likes, only private 'resonance'
+  resonance Int      @default(0) 
+
+  createdAt DateTime @default(now())
+}

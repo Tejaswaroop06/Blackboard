@@ -1,0 +1,17 @@
+{
+  "name": "Blackboard",
+  "short_name": "Blackboard",
+  "description": "A sanctuary for the unsocial.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
